@@ -156,7 +156,6 @@
 #include "osd/osd_warnings.h"
 
 #include "pg/motor.h"
-#include "pg/landinggear.h"
 #include "pg/stats.h"
 
 #include "rx/rx.h"
@@ -164,6 +163,7 @@
 #include "sensors/adcinternal.h"
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
+#include "sensors/landinggear.h"
 #include "sensors/sensors.h"
 
 #ifdef USE_GPS_PLUS_CODES
@@ -1630,14 +1630,14 @@ static void osdElementSys(osdElementParms_t *element)
 #endif
 
 static void osdElementLandingGearInfo(osdElementParms_t *element) {
-    if (landingGearData()->state < 3) { // is either unknown, changing, or fault
+    if (getLandingGearState() < 3) { // is either unknown, changing, or fault
         SET_BLINK(OSD_LGEAR_INFO);
     } else {
         CLR_BLINK(OSD_LGEAR_INFO);
     }
     
-    if (landingGearData()->state != LGEARSTATE_FAULT) {
-        switch (landingGearData()->state) {
+    if (getLandingGearState() != LGEARSTATE_FAULT) {
+        switch (getLandingGearState()) {
             case LGEARSTATE_RETRACTED:
                 tfp_sprintf(element->buff, "LG RETRACTED");
                 break;
@@ -1657,38 +1657,34 @@ static void osdElementLandingGearInfo(osdElementParms_t *element) {
                 tfp_sprintf(element->buff, "LG UNDEFINED");
         }
     } else { // show faults
-        // the maxium amount of characters should be 17 including the NULL byte, because each fault can be either
-        // an inoperable motor or lock. A report on an inoperable lock can only be generated if a motor
-        // successfully moved the landing gear in a desired position. I still made this buffer 22 chars long
-        // just in case something stupid happens(but it should not in any way)
         char faultCodes[22] = {'\0'};
 
         for (uint8_t i = 0; i < 8; i++) { // go through all fault bits
-            bool flag = landingGearData()->faults & (1 << i);
+            bool flag = getLandingGearFaults() & (1 << i);
             if (flag) {
                 switch (i) {
-                    case 0: // Left landing gear: upper motor inoperable
+                    case LGEARFAULT_LEFT_UP_MOTOR:
                         strcat(faultCodes, " LUM");
                         break;
-                    case 1: // Left landing gear: lower motor inoperable
+                    case LGEARFAULT_LEFT_LOW_MOTOR:
                         strcat(faultCodes, " LLM");
                         break;
-                    case 2: // Left landing gear: upper lock inoperable
+                    case LGEARFAULT_LEFT_UP_LOCK:
                         strcat(faultCodes, " LUL");
                         break;
-                    case 3: // Left landing gear: lower lock inoperable
+                    case LGEARFAULT_LEFT_LO_LOCK:
                         strcat(faultCodes, " LLL");
                         break;
-                    case 4: // Right landing gear: upper motor inoperable
+                    case LGEARFAULT_RIGHT_UP_MOTOR:
                         strcat(faultCodes, " RUM");
                         break;
-                    case 5: // Right landing gear: lower motor inoperable
+                    case LGEARFAULT_RIGHT_LO_MOTOR:
                         strcat(faultCodes, " RLM");
                         break;
-                    case 6: // Right landing gear: upper lock inoperable
+                    case LGEARFAULT_RIGHT_UP_LOCK: 
                         strcat(faultCodes, " RUL");
                         break;
-                    case 7: // Right landing gear: lower lock inoperable
+                    case LGEARFAULT_RIGHT_LO_LOCK:
                         strcat(faultCodes, " RLL");
                         break;
                     default:

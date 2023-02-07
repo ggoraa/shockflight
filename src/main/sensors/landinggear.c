@@ -19,6 +19,22 @@
  */
 
 #include "landinggear.h"
-#include "pg_ids.h"
 
-PG_REGISTER(landingGearData_t, landingGearData, PG_LANDINGGEAR, 0);
+static landingGearState_t lGearState = 0;
+static uint8_t faults = 0;
+
+landingGearState_t getLandingGearState(void) {
+    return lGearState;
+}
+
+void setLandingGearState(landingGearState_t state) {
+    lGearState = state;
+}
+
+uint8_t getLandingGearFaults(void) {
+    return faults;
+}
+
+void setLandingGearFaults(uint8_t newFaults) {
+    faults = newFaults;
+}
