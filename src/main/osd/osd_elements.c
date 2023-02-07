@@ -156,6 +156,7 @@
 #include "osd/osd_warnings.h"
 
 #include "pg/motor.h"
+#include "pg/landinggear.h"
 #include "pg/stats.h"
 
 #include "rx/rx.h"
@@ -1628,6 +1629,60 @@ static void osdElementSys(osdElementParms_t *element)
 }
 #endif
 
+static void osdElementLandingGearInfo(osdElementParms_t *element) {
+    if (landingGearData()->state < 3) { // is either unknown, changing, or fault
+        SET_BLINK(OSD_LGEAR_INFO);
+    } else {
+        CLR_BLINK(OSD_LGEAR_INFO);
+    }
+    
+    if (landingGearData()->state != LGEARSTATE_FAULT) {
+        switch (landingGearData()->state) {
+            case LGEARSTATE_RETRACTED:
+                tfp_sprintf(element->buff, "LG RETRACTED");
+                break;
+            case LGEARSTATE_HANDLEMODE:
+                tfp_sprintf(element->buff, "LG HANDLE MODE");
+                break;
+            case LGEARSTATE_EXTENDED:
+                tfp_sprintf(element->buff, "LG EXTENDED");
+                break;
+            case LGEARSTATE_CHANGING:
+                tfp_sprintf(element->buff, "LG CHANGING");
+                break;
+            case LGEARSTATE_UNKNOWN:
+                tfp_sprintf(element->buff, "LG UNKNOWN");
+                break;
+            default:
+                tfp_sprintf(element->buff, "LG UNDEFINED");
+        }
+    } else { // show faults
+        char faultCodes[16];
+        for (uint8_t i = 0; i < 8; i++) { // go through all fault bits
+            bool flag = landingGearData()->faults & (1 << i);
+            if (flag) {
+                switch (i) {
+                    case 0: // Left landing gear: upper motor inoperable
+                        strcat(faultCodes, " LU");
+                        break;
+                    case 1: // Left landing gear: lower motor inoperable
+                        strcat(faultCodes, " LL");
+                        break;
+                    case 2: // Right landing gear: upper motor inoperable
+                        strcat(faultCodes, " RU");
+                        break;
+                    case 3: // Right landing gear: lower motor inoperable
+                        strcat(faultCodes, " RL");
+                        break;
+                    default:
+                        strcat(faultCodes, " UNK");
+                }
+            }
+        }
+        tfp_sprintf(element->buff, "LG INOP:%s", faultCodes);
+    }
+}
+
 // Define the order in which the elements are drawn.
 // Elements positioned later in the list will overlay the earlier
 // ones if their character positions overlap
@@ -1727,6 +1782,7 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_SYS_WARNINGS,
     OSD_SYS_VTX_TEMP,
     OSD_SYS_FAN_SPEED,
+    OSD_LGEAR_INFO
 };
 
 // Define the mapping between the OSD element id and the function to draw it
@@ -1860,6 +1916,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_SYS_WARNINGS]            = osdElementSys,
     [OSD_SYS_VTX_TEMP]            = osdElementSys,
     [OSD_SYS_FAN_SPEED]           = osdElementSys,
+    [OSD_LGEAR_INFO]              = osdElementLandingGearInfo,
 #endif
 };
 
