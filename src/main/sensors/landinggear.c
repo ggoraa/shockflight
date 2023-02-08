@@ -27,7 +27,7 @@ landingGearState_t getLandingGearState(void) {
     return lGearState;
 }
 
-void setLandingGearState(landingGearState_t state) {
+void setLandingGearState(const landingGearState_t state) {
     lGearState = state;
 }
 
@@ -35,6 +35,6 @@ uint8_t getLandingGearFaults(void) {
     return faults;
 }
 
-void setLandingGearFaults(uint8_t newFaults) {
+void setLandingGearFaults(const uint8_t newFaults) {
     faults = newFaults;
 }
